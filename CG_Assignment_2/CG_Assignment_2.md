@@ -1,35 +1,14 @@
-#include <chrono>
-#include <iostream>
-#include <opencv2/opencv.hpp>
+# CG_Assignment_2
 
-std::vector<cv::Point2f> control_points;
+## **完成情况**
 
-void mouse_handler(int event, int x, int y, int flags, void* userdata)
-{
-    if (event == cv::EVENT_LBUTTONDOWN)
-    {
-        std::cout << "Left button of the mouse is clicked - position (" << x << ", "
-            << y << ")" << '\n';
-        control_points.emplace_back(x, y);
-    }
-}
+- [x] 正确地提交所有必须的文件，且代码能够编译运行
+- [x] De Casteljau 算法：对于给定的控制点，你的代码能够产生正确的 Bézier 曲线
+- [x] 实现对 Bézier 曲线的反走样
 
-void naive_bezier(const std::vector<cv::Point2f>& points, cv::Mat& window)
-{
-    auto& p_0 = points[0];
-    auto& p_1 = points[1];
-    auto& p_2 = points[2];
-    auto& p_3 = points[3];
+## **recursive_bezier**
 
-    for (double t = 0.0; t <= 1.0; t += 0.001)
-    {
-        auto point = std::pow(1 - t, 3) * p_0 + 3 * t * std::pow(1 - t, 2) * p_1 +
-            3 * std::pow(t, 2) * (1 - t) * p_2 + std::pow(t, 3) * p_3;
-
-        window.at<cv::Vec3b>(point.y, point.x)[2] = 255;
-    }
-}
-
+```c++
 cv::Point2f recursive_bezier(const std::vector<cv::Point2f>& control_points, float t)
 {
     if (control_points.size() == 1)
@@ -50,7 +29,19 @@ cv::Point2f recursive_bezier(const std::vector<cv::Point2f>& control_points, flo
     //return cv::Point2f();
 
 }
+```
 
+`recursive_bezier` 函数实现了 de Casteljau 递归算法，具体功能如下：
+
+- **输入参数**：
+  - `control_points`：一个包含控制点的 `std::vector<cv::Point2f>`。这些控制点定义了 Bézier 曲线的形状
+  - `t`：一个浮点数，表示要计算 Bézier 曲线上的点的位置，范围在 0 到 1 之间
+- **递归计算**：`recursive_bezier` 函数使用 de Casteljau 算法递归地计算 Bézier 曲线上的点
+- **输出结果**：最终，它返回 Bézier 曲线上给定 `t` 处的点坐标（`cv::Point2f` 类型）
+
+## **bezier**
+
+```c++
 void bezier(const std::vector<cv::Point2f>& control_points, cv::Mat& window)
 {
     // TODO: Iterate through all t = 0 to t = 1 with small steps, and call de Casteljau's 
@@ -86,38 +77,13 @@ void bezier(const std::vector<cv::Point2f>& control_points, cv::Mat& window)
         }
     }
 }
+```
 
-int main()
-{
-    cv::Mat window = cv::Mat(700, 700, CV_8UC3, cv::Scalar(0));
-    cv::cvtColor(window, window, cv::COLOR_BGR2RGB);
-    cv::namedWindow("Bezier Curve", cv::WINDOW_AUTOSIZE);
+`bezier` 函数的目的是绘制 Bézier 曲线。具体功能如下：
 
-    cv::setMouseCallback("Bezier Curve", mouse_handler, nullptr);
-
-    int key = -1;
-    while (key != 27)
-    {
-        window.setTo(0);
-        for (auto& point : control_points)
-        {
-            cv::circle(window, point, 3, { 255, 255, 255 }, 3);
-        }
-
-        if (control_points.size() >= 4)
-        {
-            naive_bezier(control_points, window);
-            bezier(control_points, window);
-
-            cv::imshow("Bezier Curve", window);
-            cv::imwrite("my_bezier_curve.png", window);
-            key = cv::waitKey(1);
-
-        }
-
-        cv::imshow("Bezier Curve", window);
-        key = cv::waitKey(20);
-    }
-
-    return 0;
-}
+- **输入参数**：
+  - `control_points`：一个包含控制点的 `std::vector<cv::Point2f>`。这些控制点定义了 Bézier 曲线的形状
+  - `window`：一个 OpenCV 的 `cv::Mat` 对象，代表绘图窗口。曲线将绘制在这个窗口上
+- **迭代计算**：`bezier` 函数通过迭代来计算曲线上的点。它从 `t` 值为 0 到 1 的范围内，以小步长递增的方式遍历
+- **计算点位置**：对于每个 `t` 值，它调用了 `recursive_bezier` 函数来计算在 Bézier 曲线上的点
+- **绘制曲线**：然后，它使用得到的点坐标将一条绿色线绘制在 `window` 上。你可以通过 `window.at<cv::Vec3b>(point.y, point.x)[1] = 255` 来将绿色线绘制在屏幕上
