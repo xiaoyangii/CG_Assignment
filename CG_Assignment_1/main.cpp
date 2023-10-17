@@ -1,123 +1,55 @@
+#include "Renderer.hpp"
+#include "Scene.hpp"
+#include "Triangle.hpp"
+#include "Sphere.hpp"
+#include "Vector.hpp"
+#include "global.hpp"
 #include <chrono>
-#include <iostream>
-#include <opencv2/opencv.hpp>
 
-std::vector<cv::Point2f> control_points;
-
-void mouse_handler(int event, int x, int y, int flags, void* userdata)
+// In the main function of the program, we create the scene (create objects and
+// lights) as well as set the options for the render (image width and height,
+// maximum recursion depth, field-of-view, etc.). We then call the render
+// function().
+int main(int argc, char** argv)
 {
-    if (event == cv::EVENT_LBUTTONDOWN)
-    {
-        std::cout << "Left button of the mouse is clicked - position (" << x << ", "
-            << y << ")" << '\n';
-        control_points.emplace_back(x, y);
-    }
-}
 
-void naive_bezier(const std::vector<cv::Point2f>& points, cv::Mat& window)
-{
-    auto& p_0 = points[0];
-    auto& p_1 = points[1];
-    auto& p_2 = points[2];
-    auto& p_3 = points[3];
+    // Change the definition here to change resolution
+    Scene scene(784, 784);
 
-    for (double t = 0.0; t <= 1.0; t += 0.001)
-    {
-        auto point = std::pow(1 - t, 3) * p_0 + 3 * t * std::pow(1 - t, 2) * p_1 +
-            3 * std::pow(t, 2) * (1 - t) * p_2 + std::pow(t, 3) * p_3;
+    Material* red = new Material(DIFFUSE, Vector3f(0.0f));
+    red->Kd = Vector3f(0.63f, 0.065f, 0.05f);
+    Material* green = new Material(DIFFUSE, Vector3f(0.0f));
+    green->Kd = Vector3f(0.14f, 0.45f, 0.091f);
+    Material* white = new Material(DIFFUSE, Vector3f(0.0f));
+    white->Kd = Vector3f(0.725f, 0.71f, 0.68f);
+    Material* light = new Material(DIFFUSE, (8.0f * Vector3f(0.747f + 0.058f, 0.747f + 0.258f, 0.747f) + 15.6f * Vector3f(0.740f + 0.287f, 0.740f + 0.160f, 0.740f) + 18.4f * Vector3f(0.737f + 0.642f, 0.737f + 0.159f, 0.737f)));
+    light->Kd = Vector3f(0.65f);
 
-        window.at<cv::Vec3b>(point.y, point.x)[2] = 255;
-    }
-}
+    MeshTriangle floor("E:/桌面/计算机图像学/作业3/src/models/cornellbox/floor.obj", white);
+    MeshTriangle shortbox("E:/桌面/计算机图像学/作业3/src/models/cornellbox/shortbox.obj", white);
+    MeshTriangle tallbox("E:/桌面/计算机图像学/作业3/src/models/cornellbox/tallbox.obj", white);
+    MeshTriangle left("E:/桌面/计算机图像学/作业3/src/models/cornellbox/left.obj", red);
+    MeshTriangle right("E:/桌面/计算机图像学/作业3/src/models/cornellbox/right.obj", green);
+    MeshTriangle light_("E:/桌面/计算机图像学/作业3/src/models/cornellbox/light.obj", light);
 
-cv::Point2f recursive_bezier(const std::vector<cv::Point2f>& control_points, float t)
-{
-    if (control_points.size() == 1)
-    {
-        return control_points[0];
-    }
-    else
-    {
-        std::vector<cv::Point2f> new_control_points;
-        for (size_t i = 0; i < control_points.size() - 1; ++i)
-        {
-            cv::Point2f new_point = (1 - t) * control_points[i] + t * control_points[i + 1];
-            new_control_points.push_back(new_point);
-        }
-        return recursive_bezier(new_control_points, t);
-    }
+    scene.Add(&floor);
+    scene.Add(&shortbox);
+    scene.Add(&tallbox);
+    scene.Add(&left);
+    scene.Add(&right);
+    scene.Add(&light_);
 
-    //return cv::Point2f();
 
-}
+    Renderer r;
 
-void bezier(const std::vector<cv::Point2f>& control_points, cv::Mat& window)
-{
-    // TODO: Iterate through all t = 0 to t = 1 with small steps, and call de Casteljau's 
-    // recursive Bezier algorithm.
-    // Iterate through all t = 0 to t = 1 with small steps
-    for (double t = 0.0; t <= 1.0; t += 0.001)
-    {
-        // Call recursive_bezier to get the point on the curve at t
-        cv::Point2f point = recursive_bezier(control_points, t);
+    auto start = std::chrono::system_clock::now();
+    r.Render(scene);
+    auto stop = std::chrono::system_clock::now();
 
-        // Calculate integer pixel coordinates
-        int x = static_cast<int>(point.x);
-        int y = static_cast<int>(point.y);
-
-        // Calculate fractional parts of coordinates
-        double xf = point.x - x;
-        double yf = point.y - y;
-
-        // Perform 2x2 anti-aliasing
-        for (int dx = 0; dx <= 1; ++dx)
-        {
-            for (int dy = 0; dy <= 1; ++dy)
-            {
-                int px = x + dx;
-                int py = y + dy;
-
-                if (px >= 0 && px < window.cols && py >= 0 && py < window.rows)
-                {
-                    double weight = (1 - std::abs(px - point.x)) * (1 - std::abs(py - point.y));
-                    window.at<cv::Vec3b>(py, px)[1] += static_cast<uchar>(weight * 255);
-                }
-            }
-        }
-    }
-}
-
-int main()
-{
-    cv::Mat window = cv::Mat(700, 700, CV_8UC3, cv::Scalar(0));
-    cv::cvtColor(window, window, cv::COLOR_BGR2RGB);
-    cv::namedWindow("Bezier Curve", cv::WINDOW_AUTOSIZE);
-
-    cv::setMouseCallback("Bezier Curve", mouse_handler, nullptr);
-
-    int key = -1;
-    while (key != 27)
-    {
-        window.setTo(0);
-        for (auto& point : control_points)
-        {
-            cv::circle(window, point, 3, { 255, 255, 255 }, 3);
-        }
-
-        if (control_points.size() >= 4)
-        {
-            naive_bezier(control_points, window);
-            bezier(control_points, window);
-
-            cv::imshow("Bezier Curve", window);
-            cv::imwrite("my_bezier_curve.png", window);
-            key = cv::waitKey(1);
-
-        }
-
-        cv::imshow("Bezier Curve", window);
-        key = cv::waitKey(20);
-    }
+    std::cout << "Render complete: \n";
+    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::hours>(stop - start).count() << " hours\n";
+    std::cout << "          : " << std::chrono::duration_cast<std::chrono::minutes>(stop - start).count() << " minutes\n";
+    std::cout << "          : " << std::chrono::duration_cast<std::chrono::seconds>(stop - start).count() << " seconds\n";
 
     return 0;
 }
