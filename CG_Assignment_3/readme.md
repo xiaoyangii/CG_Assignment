@@ -12,7 +12,7 @@
 
 `分辨率` 784*784 `SPP` 64 `运行时长` 3minutes 207seconds
 
-![](E:\桌面\CG_Assignment\CG_Assignment_3\images\多线程_SPP64_784784_实验结果.png)
+![](./images/多线程_SPP64_784784_实验结果.png)
 
 ## 存在问题及解决
 
