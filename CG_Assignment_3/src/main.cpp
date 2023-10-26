@@ -30,12 +30,12 @@ int main(int argc, char **argv)
 
 
 
-	MeshTriangle floor("E:/桌面/计算机图像学/作业3/src/models/cornellbox/floor.obj", white);
-	MeshTriangle shortbox("E:/桌面/计算机图像学/作业3/src/models/cornellbox/shortbox.obj", white);
-	MeshTriangle tallbox("E:/桌面/计算机图像学/作业3/src/models/cornellbox/tallbox.obj", white);
-	MeshTriangle left("E:/桌面/计算机图像学/作业3/src/models/cornellbox/left.obj", red);
-	MeshTriangle right("E:/桌面/计算机图像学/作业3/src/models/cornellbox/right.obj", green);
-	MeshTriangle light_("E:/桌面/计算机图像学/作业3/src/models/cornellbox/light.obj", light);
+	MeshTriangle floor("/models/cornellbox/floor.obj", white);
+	MeshTriangle shortbox("/models/cornellbox/shortbox.obj", white);
+	MeshTriangle tallbox("c/models/cornellbox/tallbox.obj", white);
+	MeshTriangle left("/models/cornellbox/left.obj", red);
+	MeshTriangle right("/models/cornellbox/right.obj", green);
+	MeshTriangle light_("/models/cornellbox/light.obj", light);
 
 
 	scene.Add(&floor);
